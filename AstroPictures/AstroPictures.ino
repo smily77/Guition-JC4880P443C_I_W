@@ -186,21 +186,6 @@ void update_clock_labels() {
 void setup_ui() {
   lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x000000), 0);
 
-  time_label = lv_label_create(lv_scr_act());
-  lv_obj_set_style_text_color(time_label, lv_color_hex(0xFFFFFF), 0);
-  lv_obj_set_style_text_font(time_label, &lv_font_montserrat_28, 0);
-  lv_obj_align(time_label, LV_ALIGN_BOTTOM_LEFT, 16, -16);
-
-  date_label = lv_label_create(lv_scr_act());
-  lv_obj_set_style_text_color(date_label, lv_color_hex(0xFFFFFF), 0);
-  lv_obj_set_style_text_font(date_label, &lv_font_montserrat_20, 0);
-  lv_obj_align(date_label, LV_ALIGN_BOTTOM_RIGHT, -16, -12);
-
-  ip_label = lv_label_create(lv_scr_act());
-  lv_obj_set_style_text_color(ip_label, lv_color_hex(0xAAAAAA), 0);
-  lv_obj_set_style_text_font(ip_label, &lv_font_montserrat_14, 0);
-  lv_obj_align(ip_label, LV_ALIGN_BOTTOM_MID, 0, -36);
-
   status_label = lv_label_create(lv_scr_act());
   lv_obj_set_style_text_color(status_label, lv_color_hex(0xBBBBBB), 0);
   lv_obj_set_style_text_font(status_label, &lv_font_montserrat_16, 0);
@@ -224,6 +209,26 @@ void setup_ui() {
   image_obj = lv_img_create(lv_scr_act());
   lv_img_set_src(image_obj, &apod_img_dsc);
   lv_obj_align(image_obj, LV_ALIGN_CENTER, 0, 0);
+
+  time_label = lv_label_create(lv_scr_act());
+  lv_obj_set_style_text_color(time_label, lv_color_hex(0xFFFFFF), 0);
+  lv_obj_set_style_text_font(time_label, &lv_font_montserrat_28, 0);
+  lv_obj_align(time_label, LV_ALIGN_BOTTOM_LEFT, 16, -16);
+
+  date_label = lv_label_create(lv_scr_act());
+  lv_obj_set_style_text_color(date_label, lv_color_hex(0xFFFFFF), 0);
+  lv_obj_set_style_text_font(date_label, &lv_font_montserrat_20, 0);
+  lv_obj_align(date_label, LV_ALIGN_BOTTOM_RIGHT, -16, -12);
+
+  ip_label = lv_label_create(lv_scr_act());
+  lv_obj_set_style_text_color(ip_label, lv_color_hex(0xAAAAAA), 0);
+  lv_obj_set_style_text_font(ip_label, &lv_font_montserrat_14, 0);
+  lv_obj_align(ip_label, LV_ALIGN_BOTTOM_MID, 0, -36);
+
+  lv_obj_move_foreground(time_label);
+  lv_obj_move_foreground(date_label);
+  lv_obj_move_foreground(ip_label);
+  lv_obj_move_foreground(status_label);
 
   update_clock_labels();
   lv_label_set_text(ip_label, "IP: ---");
