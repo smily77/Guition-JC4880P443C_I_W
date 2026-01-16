@@ -254,6 +254,7 @@ void draw_loading_screen(const char *message) {
     set_pixel(x, y, 0xFFFF);
   }
   lv_img_set_src(image_obj, &apod_img_dsc);
+  lv_obj_invalidate(image_obj);
   set_status_text(message);
 }
 
@@ -412,6 +413,7 @@ bool decode_and_show_jpeg(uint8_t *jpg_buffer, size_t jpg_len) {
   }
 
   lv_img_set_src(image_obj, &apod_img_dsc);
+  lv_obj_invalidate(image_obj);
   lv_timer_handler();
   return true;
 }
