@@ -217,8 +217,8 @@ void setup_ui() {
 
   date_label = lv_label_create(lv_scr_act());
   lv_obj_set_style_text_color(date_label, lv_color_hex(0xFFFFFF), 0);
-  lv_obj_set_style_text_font(date_label, &lv_font_montserrat_20, 0);
-  lv_obj_align(date_label, LV_ALIGN_BOTTOM_RIGHT, -16, -12);
+  lv_obj_set_style_text_font(date_label, &lv_font_montserrat_28, 0);
+  lv_obj_align(date_label, LV_ALIGN_BOTTOM_RIGHT, -16, -16);
 
   ip_label = lv_label_create(lv_scr_act());
   lv_obj_set_style_text_color(ip_label, lv_color_hex(0xAAAAAA), 0);
@@ -253,8 +253,10 @@ void draw_loading_screen(const char *message) {
     int y = random(0, LCD_V_RES);
     set_pixel(x, y, 0xFFFF);
   }
+  lv_img_cache_invalidate_src(&apod_img_dsc);
   lv_img_set_src(image_obj, &apod_img_dsc);
   lv_obj_invalidate(image_obj);
+  lv_refr_now(lv_disp_get_default());
   set_status_text(message);
 }
 
@@ -412,8 +414,10 @@ bool decode_and_show_jpeg(uint8_t *jpg_buffer, size_t jpg_len) {
     return false;
   }
 
+  lv_img_cache_invalidate_src(&apod_img_dsc);
   lv_img_set_src(image_obj, &apod_img_dsc);
   lv_obj_invalidate(image_obj);
+  lv_refr_now(lv_disp_get_default());
   lv_timer_handler();
   return true;
 }
