@@ -269,21 +269,22 @@ bool tjpg_draw_callback(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *
     if (dest_y < 0 || dest_y >= LCD_V_RES) {
       continue;
     }
-    uint16_t *dest = apod_buffer + dest_y * LCD_H_RES + start_x;
-    uint16_t *src = bitmap + row * w;
-    int copy_width = w;
-    if (start_x < 0) {
-      int skip = -start_x;
-      src += skip;
-      dest += skip;
-      copy_width -= skip;
+    int src_offset = 0;
+    int dest_x = start_x;
+    if (dest_x < 0) {
+      src_offset = -dest_x;
+      dest_x = 0;
     }
-    if (start_x + copy_width > LCD_H_RES) {
-      copy_width = LCD_H_RES - start_x;
+    int copy_width = w - src_offset;
+    if (dest_x + copy_width > LCD_H_RES) {
+      copy_width = LCD_H_RES - dest_x;
     }
-    if (copy_width > 0) {
-      memcpy(dest, src, copy_width * sizeof(uint16_t));
+    if (copy_width <= 0) {
+      continue;
     }
+    uint16_t *dest = apod_buffer + dest_y * LCD_H_RES + dest_x;
+    uint16_t *src = bitmap + row * w + src_offset;
+    memcpy(dest, src, copy_width * sizeof(uint16_t));
   }
   return true;
 }
