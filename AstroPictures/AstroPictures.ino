@@ -161,7 +161,7 @@ void update_backlight() {
 }
 
 void init_time() {
-  setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1);
+  setenv("TZ", "Europe/Zurich", 1);
   tzset();
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
 }
@@ -261,6 +261,9 @@ void draw_loading_screen(const char *message) {
 }
 
 bool tjpg_draw_callback(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap) {
+  if (!apod_buffer) {
+    return false;
+  }
   int start_x = x + image_offset_x;
   int start_y = y + image_offset_y;
 
@@ -306,7 +309,7 @@ bool download_buffer(const String &url, uint8_t **out_buffer, size_t *out_len) {
   }
 
   int total_len = http.getSize();
-  if (total_len <= 0 || total_len > 2 * 1024 * 1024) {
+  if (total_len <= 0 || total_len > 8 * 1024 * 1024) {
     Serial.println("[HTTP] Invalid content length");
     http.end();
     return false;
@@ -416,6 +419,7 @@ bool decode_and_show_jpeg(uint8_t *jpg_buffer, size_t jpg_len) {
   }
 
   lv_img_cache_invalidate_src(&apod_img_dsc);
+  lv_img_set_src(image_obj, nullptr);
   lv_img_set_src(image_obj, &apod_img_dsc);
   lv_obj_invalidate(image_obj);
   lv_refr_now(lv_disp_get_default());
@@ -461,6 +465,7 @@ bool update_apod_image() {
     set_status_text("DL Err: JPEG");
   }
 
+  lv_obj_move_foreground(status_label);
   return ok;
 }
 
