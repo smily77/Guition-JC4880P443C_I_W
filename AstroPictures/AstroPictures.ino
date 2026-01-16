@@ -18,7 +18,7 @@
 #include "src/touch/gt911_touch.h"
 
 // WiFi Credentials
-#include "D:/Credentials.h"
+#include <Credentials.h>
 
 bsp_lcd_handles_t lcd_panels;
 
