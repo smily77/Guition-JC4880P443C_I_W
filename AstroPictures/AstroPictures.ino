@@ -208,6 +208,7 @@ void setup_ui() {
 
   image_obj = lv_img_create(lv_scr_act());
   lv_img_set_src(image_obj, &apod_img_dsc);
+  lv_obj_set_size(image_obj, LCD_H_RES, LCD_V_RES);
   lv_obj_align(image_obj, LV_ALIGN_CENTER, 0, 0);
 
   time_label = lv_label_create(lv_scr_act());
@@ -229,6 +230,7 @@ void setup_ui() {
   lv_obj_move_foreground(date_label);
   lv_obj_move_foreground(ip_label);
   lv_obj_move_foreground(status_label);
+  lv_obj_move_to_background(image_obj);
 
   update_clock_labels();
   lv_label_set_text(ip_label, "IP: ---");
@@ -253,6 +255,8 @@ void draw_loading_screen(const char *message) {
     int y = random(0, LCD_V_RES);
     set_pixel(x, y, 0xFFFF);
   }
+  apod_img_dsc.header.w = LCD_H_RES;
+  apod_img_dsc.header.h = LCD_V_RES;
   lv_img_cache_invalidate_src(&apod_img_dsc);
   lv_img_set_src(image_obj, &apod_img_dsc);
   lv_obj_invalidate(image_obj);
@@ -349,7 +353,7 @@ bool download_buffer(const String &url, uint8_t **out_buffer, size_t *out_len) {
   return true;
 }
 
-bool fetch_apod_metadata(String *image_url, String *date_str) {
+bool fetch_apod_metadata(String *image_url, String *date_str, String *media_type_out) {
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
@@ -392,6 +396,7 @@ bool fetch_apod_metadata(String *image_url, String *date_str) {
 
   *image_url = String(url_image);
   *date_str = String(date);
+  *media_type_out = String(media_type);
   return true;
 }
 
@@ -418,6 +423,8 @@ bool decode_and_show_jpeg(uint8_t *jpg_buffer, size_t jpg_len) {
     return false;
   }
 
+  apod_img_dsc.header.w = LCD_H_RES;
+  apod_img_dsc.header.h = LCD_V_RES;
   lv_img_cache_invalidate_src(&apod_img_dsc);
   lv_img_set_src(image_obj, nullptr);
   lv_img_set_src(image_obj, &apod_img_dsc);
@@ -436,8 +443,14 @@ bool update_apod_image() {
 
   String image_url;
   String date_str;
-  if (!fetch_apod_metadata(&image_url, &date_str)) {
+  String media_type;
+  if (!fetch_apod_metadata(&image_url, &date_str, &media_type)) {
     set_status_text("Error: APOD metadata");
+    return false;
+  }
+
+  if (media_type != "image") {
+    set_status_text("APOD is a Video - No Image");
     return false;
   }
 
