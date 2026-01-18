@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
-#include <WifiKeyboard.h>
+#include "WifiKeyboard.h"
 #include "lvgl.h"
 #include "driver/i2c_master.h"
 #include "pins_config.h"
