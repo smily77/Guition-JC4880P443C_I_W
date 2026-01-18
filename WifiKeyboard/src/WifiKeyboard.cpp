@@ -10,6 +10,7 @@ struct Session
     bool active;
     lv_obj_t *container;
     lv_obj_t *keyboard;
+    lv_obj_t *ssid_dropdown;
     lv_obj_t *ssid_textarea;
     lv_obj_t *password_textarea;
     lv_obj_t *status_label;
@@ -23,6 +24,10 @@ static Session session;
 
 static char ssid[33] = "";
 static char password[65] = "";
+static bool wifi_ready = false;
+static constexpr size_t kMaxSsids = 15;
+static char ssid_list[kMaxSsids][33] = {};
+static size_t ssid_count = 0;
 
 static void trim_trailing_whitespace(char *value)
 {
@@ -45,6 +50,97 @@ static void trim_trailing_whitespace(char *value)
             break;
         }
     }
+}
+
+static void refresh_ssid_list()
+{
+    if (!wifi_ready)
+    {
+        WiFi.mode(WIFI_STA);
+        WiFi.disconnect(true);
+        wifi_ready = true;
+    }
+
+    int count = WiFi.scanNetworks(false, true);
+    ssid_count = 0;
+    if (count <= 0)
+    {
+        return;
+    }
+
+    for (int i = 0; i < count && ssid_count < kMaxSsids; ++i)
+    {
+        String name = WiFi.SSID(i);
+        if (name.length() == 0)
+        {
+            continue;
+        }
+
+        bool duplicate = false;
+        for (size_t j = 0; j < ssid_count; ++j)
+        {
+            if (name.equals(ssid_list[j]))
+            {
+                duplicate = true;
+                break;
+            }
+        }
+        if (duplicate)
+        {
+            continue;
+        }
+
+        name.toCharArray(ssid_list[ssid_count], sizeof(ssid_list[ssid_count]));
+        ssid_count++;
+    }
+
+    WiFi.scanDelete();
+}
+
+static void build_ssid_dropdown_options(char *buffer, size_t buffer_size)
+{
+    if (buffer == nullptr || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    strlcpy(buffer, "SSID auswählen", buffer_size);
+    for (size_t i = 0; i < ssid_count; ++i)
+    {
+        strlcat(buffer, "\n", buffer_size);
+        strlcat(buffer, ssid_list[i], buffer_size);
+    }
+}
+
+static void ssid_dropdown_event(lv_event_t *e)
+{
+    Session *ctx = static_cast<Session *>(lv_event_get_user_data(e));
+    if (ctx == nullptr || ctx->ssid_dropdown == nullptr)
+    {
+        return;
+    }
+
+    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED)
+    {
+        return;
+    }
+
+    uint16_t selected = lv_dropdown_get_selected(ctx->ssid_dropdown);
+    if (selected == 0 || selected > ssid_count)
+    {
+        return;
+    }
+
+    const char *selected_ssid = ssid_list[selected - 1];
+    strncpy(ssid, selected_ssid, sizeof(ssid) - 1);
+    ssid[sizeof(ssid) - 1] = '\0';
+    lv_textarea_set_text(ctx->ssid_textarea, ssid);
+    ctx->active_textarea = ctx->ssid_textarea;
+    ctx->active_key = "ssid";
+    update_active_field(ctx, "SSID");
+    lv_keyboard_set_textarea(ctx->keyboard, ctx->active_textarea);
+    lv_obj_clear_flag(ctx->keyboard, LV_OBJ_FLAG_HIDDEN);
 }
 
 static void update_active_field(Session *ctx, const char *field_label)
@@ -211,9 +307,25 @@ void start()
     lv_obj_set_style_text_font(ssid_label, &lv_font_montserrat_18, 0);
     lv_obj_set_style_text_color(ssid_label, lv_color_white(), 0);
 
+    refresh_ssid_list();
+
+    session.ssid_dropdown = lv_dropdown_create(session.container);
+    lv_obj_set_width(session.ssid_dropdown, LV_HOR_RES - 40);
+    lv_obj_align(session.ssid_dropdown, LV_ALIGN_TOP_LEFT, 20, 85);
+    lv_dropdown_set_symbol(session.ssid_dropdown, LV_SYMBOL_DOWN);
+    lv_dropdown_set_dir(session.ssid_dropdown, LV_DIR_BOTTOM);
+    lv_dropdown_set_max_height(session.ssid_dropdown, LV_VER_RES / 2);
+    lv_obj_set_style_text_font(session.ssid_dropdown, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_border_width(session.ssid_dropdown, 2, 0);
+    lv_obj_set_style_border_color(session.ssid_dropdown, lv_color_white(), 0);
+    char dropdown_options[512];
+    build_ssid_dropdown_options(dropdown_options, sizeof(dropdown_options));
+    lv_dropdown_set_options(session.ssid_dropdown, dropdown_options);
+    lv_obj_add_event_cb(session.ssid_dropdown, ssid_dropdown_event, LV_EVENT_ALL, &session);
+
     session.ssid_textarea = lv_textarea_create(session.container);
     lv_obj_set_width(session.ssid_textarea, LV_HOR_RES - 40);
-    lv_obj_align(session.ssid_textarea, LV_ALIGN_TOP_LEFT, 20, 85);
+    lv_obj_align(session.ssid_textarea, LV_ALIGN_TOP_LEFT, 20, 135);
     lv_textarea_set_placeholder_text(session.ssid_textarea, "SSID eingeben");
     lv_textarea_set_text(session.ssid_textarea, ssid);
     lv_obj_set_style_text_font(session.ssid_textarea, &lv_font_montserrat_18, 0);
@@ -223,13 +335,13 @@ void start()
 
     lv_obj_t *pass_label = lv_label_create(session.container);
     lv_label_set_text(pass_label, "Passwort:");
-    lv_obj_align(pass_label, LV_ALIGN_TOP_LEFT, 20, 140);
+    lv_obj_align(pass_label, LV_ALIGN_TOP_LEFT, 20, 190);
     lv_obj_set_style_text_font(pass_label, &lv_font_montserrat_18, 0);
     lv_obj_set_style_text_color(pass_label, lv_color_white(), 0);
 
     session.password_textarea = lv_textarea_create(session.container);
     lv_obj_set_width(session.password_textarea, LV_HOR_RES - 40);
-    lv_obj_align(session.password_textarea, LV_ALIGN_TOP_LEFT, 20, 165);
+    lv_obj_align(session.password_textarea, LV_ALIGN_TOP_LEFT, 20, 215);
     lv_textarea_set_placeholder_text(session.password_textarea, "Passwort eingeben");
     lv_textarea_set_password_mode(session.password_textarea, true);
     lv_textarea_set_text(session.password_textarea, password);
@@ -240,12 +352,12 @@ void start()
 
     session.status_label = lv_label_create(session.container);
     lv_label_set_text(session.status_label, "Eingabe: SSID");
-    lv_obj_align(session.status_label, LV_ALIGN_TOP_LEFT, 20, 250);
+    lv_obj_align(session.status_label, LV_ALIGN_TOP_LEFT, 20, 300);
     lv_obj_set_style_text_font(session.status_label, &lv_font_montserrat_18, 0);
     lv_obj_set_style_text_color(session.status_label, lv_color_white(), 0);
 
     session.password_toggle = lv_switch_create(session.container);
-    lv_obj_align(session.password_toggle, LV_ALIGN_TOP_LEFT, 20, 210);
+    lv_obj_align(session.password_toggle, LV_ALIGN_TOP_LEFT, 20, 260);
     lv_obj_add_event_cb(session.password_toggle, password_toggle_event, LV_EVENT_VALUE_CHANGED, &session);
 
     session.password_toggle_label = lv_label_create(session.container);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Preferences.h>
+#include <WiFi.h>
 #include "lvgl.h"
 
 namespace WifiKeyboard
