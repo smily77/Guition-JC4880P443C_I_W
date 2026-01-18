@@ -186,6 +186,12 @@ void start()
         return;
     }
 
+    lv_indev_t *indev = lv_indev_get_act();
+    if (indev != nullptr)
+    {
+        lv_indev_wait_release(indev);
+    }
+
     session.active = true;
     session.container = lv_obj_create(lv_scr_act());
     lv_obj_remove_style_all(session.container);
