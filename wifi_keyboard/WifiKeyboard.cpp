@@ -323,6 +323,7 @@ void start()
 
     lv_label_set_text(session.status_label, "Suche SSID...");
     lv_timer_handler();
+    lv_refr_now(nullptr);
     refresh_ssid_list();
     lv_label_set_text(session.status_label, "Eingabe: SSID");
 
