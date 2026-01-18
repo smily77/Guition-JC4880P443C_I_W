@@ -107,7 +107,13 @@ static void build_ssid_dropdown_options(char *buffer, size_t buffer_size)
     }
 
     buffer[0] = '\0';
-    strlcpy(buffer, "SSID auswählen", buffer_size);
+    strlcpy(buffer, "SSID Auswahl", buffer_size);
+    if (ssid_count == 0)
+    {
+        strlcat(buffer, "\nKeine SSID gefunden", buffer_size);
+        return;
+    }
+
     for (size_t i = 0; i < ssid_count; ++i)
     {
         strlcat(buffer, "\n", buffer_size);
@@ -309,7 +315,16 @@ void start()
     lv_obj_set_style_text_font(ssid_label, &lv_font_montserrat_18, 0);
     lv_obj_set_style_text_color(ssid_label, lv_color_white(), 0);
 
+    session.status_label = lv_label_create(session.container);
+    lv_label_set_text(session.status_label, "Eingabe: SSID");
+    lv_obj_align(session.status_label, LV_ALIGN_TOP_LEFT, 20, 300);
+    lv_obj_set_style_text_font(session.status_label, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_color(session.status_label, lv_color_white(), 0);
+
+    lv_label_set_text(session.status_label, "Suche SSID...");
+    lv_timer_handler();
     refresh_ssid_list();
+    lv_label_set_text(session.status_label, "Eingabe: SSID");
 
     session.ssid_dropdown = lv_dropdown_create(session.container);
     lv_obj_set_width(session.ssid_dropdown, LV_HOR_RES - 40);
@@ -351,12 +366,6 @@ void start()
     lv_obj_set_style_border_width(session.password_textarea, 2, 0);
     lv_obj_set_style_border_color(session.password_textarea, lv_color_white(), 0);
     lv_obj_add_event_cb(session.password_textarea, keyboard_event, LV_EVENT_ALL, &session);
-
-    session.status_label = lv_label_create(session.container);
-    lv_label_set_text(session.status_label, "Eingabe: SSID");
-    lv_obj_align(session.status_label, LV_ALIGN_TOP_LEFT, 20, 300);
-    lv_obj_set_style_text_font(session.status_label, &lv_font_montserrat_18, 0);
-    lv_obj_set_style_text_color(session.status_label, lv_color_white(), 0);
 
     session.password_toggle = lv_switch_create(session.container);
     lv_obj_align(session.password_toggle, LV_ALIGN_TOP_LEFT, 20, 260);
