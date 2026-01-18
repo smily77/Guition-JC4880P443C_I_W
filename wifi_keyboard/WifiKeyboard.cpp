@@ -29,6 +29,8 @@ static constexpr size_t kMaxSsids = 15;
 static char ssid_list[kMaxSsids][33] = {};
 static size_t ssid_count = 0;
 
+static void update_active_field(Session *ctx, const char *field_label);
+
 static void trim_trailing_whitespace(char *value)
 {
     if (value == nullptr)
@@ -314,7 +316,7 @@ void start()
     lv_obj_align(session.ssid_dropdown, LV_ALIGN_TOP_LEFT, 20, 85);
     lv_dropdown_set_symbol(session.ssid_dropdown, LV_SYMBOL_DOWN);
     lv_dropdown_set_dir(session.ssid_dropdown, LV_DIR_BOTTOM);
-    lv_dropdown_set_max_height(session.ssid_dropdown, LV_VER_RES / 2);
+    lv_obj_set_style_max_height(session.ssid_dropdown, LV_VER_RES / 2, 0);
     lv_obj_set_style_text_font(session.ssid_dropdown, &lv_font_montserrat_18, 0);
     lv_obj_set_style_border_width(session.ssid_dropdown, 2, 0);
     lv_obj_set_style_border_color(session.ssid_dropdown, lv_color_white(), 0);
