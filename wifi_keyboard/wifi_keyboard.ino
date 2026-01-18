@@ -171,7 +171,7 @@ static void create_ui()
     lv_obj_t *title = lv_label_create(lv_scr_act());
     lv_label_set_text(title, "WLAN Zugangsdaten");
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 12);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
 
     lv_obj_t *ssid_label = lv_label_create(lv_scr_act());
     lv_label_set_text(ssid_label, "SSID:");
@@ -201,7 +201,7 @@ static void create_ui()
     status_label = lv_label_create(lv_scr_act());
     lv_label_set_text(status_label, "Beruhre den Bildschirm für die Tastatur");
     lv_obj_align(status_label, LV_ALIGN_TOP_LEFT, 20, 220);
-    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_14, 0);
 
     keyboard = lv_keyboard_create(lv_scr_act());
     lv_obj_set_size(keyboard, LCD_H_RES, LCD_V_RES / 2);
