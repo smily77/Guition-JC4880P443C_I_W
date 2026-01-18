@@ -1,0 +1,182 @@
+#include "WifiKeyboard.h"
+
+namespace WifiKeyboard
+{
+namespace
+{
+static Preferences *prefs_ptr = nullptr;
+static constexpr const char *kNvsNamespace = "wifi";
+
+struct Session
+{
+    bool active;
+    lv_obj_t *container;
+    lv_obj_t *keyboard;
+    lv_obj_t *ssid_textarea;
+    lv_obj_t *password_textarea;
+    lv_obj_t *status_label;
+    lv_obj_t *active_textarea;
+    const char *active_key;
+};
+
+static Session session;
+
+static char ssid[33] = "";
+static char password[65] = "";
+
+static void keyboard_event(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+    Session *ctx = static_cast<Session *>(lv_event_get_user_data(e));
+    if (ctx == nullptr)
+    {
+        return;
+    }
+
+    if (code == LV_EVENT_FOCUSED || code == LV_EVENT_CLICKED)
+    {
+        if (target == ctx->ssid_textarea)
+        {
+            ctx->active_textarea = ctx->ssid_textarea;
+            ctx->active_key = "ssid";
+        }
+        else if (target == ctx->password_textarea)
+        {
+            ctx->active_textarea = ctx->password_textarea;
+            ctx->active_key = "password";
+        }
+        else
+        {
+            return;
+        }
+
+        lv_keyboard_set_textarea(ctx->keyboard, ctx->active_textarea);
+        lv_obj_clear_flag(ctx->keyboard, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
+    if (code == LV_EVENT_READY)
+    {
+        if (ctx->active_textarea != nullptr && ctx->active_key != nullptr && prefs_ptr != nullptr)
+        {
+            const char *text = lv_textarea_get_text(ctx->active_textarea);
+
+            if (strcmp(ctx->active_key, "ssid") == 0)
+            {
+                strncpy(ssid, text, sizeof(ssid) - 1);
+                ssid[sizeof(ssid) - 1] = '\0';
+            }
+            else if (strcmp(ctx->active_key, "password") == 0)
+            {
+                strncpy(password, text, sizeof(password) - 1);
+                password[sizeof(password) - 1] = '\0';
+            }
+
+            prefs_ptr->putString(ctx->active_key, text);
+            lv_label_set_text_fmt(ctx->status_label, "%s gespeichert", ctx->active_key);
+        }
+
+        lv_obj_add_flag(ctx->keyboard, LV_OBJ_FLAG_HIDDEN);
+        lv_keyboard_set_textarea(ctx->keyboard, nullptr);
+        lv_obj_del_async(ctx->container);
+        *ctx = {};
+        return;
+    }
+
+    if (code == LV_EVENT_CANCEL)
+    {
+        lv_obj_add_flag(ctx->keyboard, LV_OBJ_FLAG_HIDDEN);
+        lv_keyboard_set_textarea(ctx->keyboard, nullptr);
+        lv_obj_del_async(ctx->container);
+        *ctx = {};
+    }
+}
+}
+
+void begin(Preferences *prefs)
+{
+    prefs_ptr = prefs;
+    if (prefs_ptr == nullptr)
+    {
+        return;
+    }
+
+    prefs_ptr->getString("ssid", ssid, sizeof(ssid));
+    prefs_ptr->getString("password", password, sizeof(password));
+}
+
+void start()
+{
+    if (session.active)
+    {
+        return;
+    }
+
+    session.active = true;
+    session.container = lv_obj_create(lv_scr_act());
+    lv_obj_remove_style_all(session.container);
+    lv_obj_set_size(session.container, LV_HOR_RES, LV_VER_RES);
+    lv_obj_set_style_bg_color(session.container, lv_color_black(), 0);
+    lv_obj_set_style_bg_opa(session.container, LV_OPA_COVER, 0);
+
+    lv_obj_t *title = lv_label_create(session.container);
+    lv_label_set_text(title, "WLAN Zugangsdaten");
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 12);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_color(title, lv_color_white(), 0);
+
+    lv_obj_t *ssid_label = lv_label_create(session.container);
+    lv_label_set_text(ssid_label, "SSID:");
+    lv_obj_align(ssid_label, LV_ALIGN_TOP_LEFT, 20, 60);
+    lv_obj_set_style_text_font(ssid_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(ssid_label, lv_color_white(), 0);
+
+    session.ssid_textarea = lv_textarea_create(session.container);
+    lv_obj_set_width(session.ssid_textarea, LV_HOR_RES - 40);
+    lv_obj_align(session.ssid_textarea, LV_ALIGN_TOP_LEFT, 20, 85);
+    lv_textarea_set_placeholder_text(session.ssid_textarea, "SSID eingeben");
+    lv_textarea_set_text(session.ssid_textarea, ssid);
+    lv_obj_add_event_cb(session.ssid_textarea, keyboard_event, LV_EVENT_ALL, &session);
+
+    lv_obj_t *pass_label = lv_label_create(session.container);
+    lv_label_set_text(pass_label, "Passwort:");
+    lv_obj_align(pass_label, LV_ALIGN_TOP_LEFT, 20, 140);
+    lv_obj_set_style_text_font(pass_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(pass_label, lv_color_white(), 0);
+
+    session.password_textarea = lv_textarea_create(session.container);
+    lv_obj_set_width(session.password_textarea, LV_HOR_RES - 40);
+    lv_obj_align(session.password_textarea, LV_ALIGN_TOP_LEFT, 20, 165);
+    lv_textarea_set_placeholder_text(session.password_textarea, "Passwort eingeben");
+    lv_textarea_set_password_mode(session.password_textarea, true);
+    lv_textarea_set_text(session.password_textarea, password);
+    lv_obj_add_event_cb(session.password_textarea, keyboard_event, LV_EVENT_ALL, &session);
+
+    session.status_label = lv_label_create(session.container);
+    lv_label_set_text(session.status_label, "Tastatur erscheint beim Tippen");
+    lv_obj_align(session.status_label, LV_ALIGN_TOP_LEFT, 20, 220);
+    lv_obj_set_style_text_font(session.status_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(session.status_label, lv_color_white(), 0);
+
+    session.keyboard = lv_keyboard_create(session.container);
+    lv_obj_set_size(session.keyboard, LV_HOR_RES, LV_VER_RES / 2);
+    lv_obj_align(session.keyboard, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_keyboard_set_mode(session.keyboard, LV_KEYBOARD_MODE_TEXT_LOWER);
+    lv_obj_add_flag(session.keyboard, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_event_cb(session.keyboard, keyboard_event, LV_EVENT_ALL, &session);
+
+    session.active_textarea = session.ssid_textarea;
+    session.active_key = "ssid";
+}
+
+const char *getSsid()
+{
+    return ssid;
+}
+
+const char *getPassword()
+{
+    return password;
+}
+}
