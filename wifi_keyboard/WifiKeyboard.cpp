@@ -24,6 +24,29 @@ static Session session;
 static char ssid[33] = "";
 static char password[65] = "";
 
+static void trim_trailing_whitespace(char *value)
+{
+    if (value == nullptr)
+    {
+        return;
+    }
+
+    size_t len = strlen(value);
+    while (len > 0)
+    {
+        char last = value[len - 1];
+        if (last == '\n' || last == '\r' || last == ' ' || last == '\t')
+        {
+            value[len - 1] = '\0';
+            len--;
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
 static void update_active_field(Session *ctx, const char *field_label)
 {
     if (ctx == nullptr)
@@ -104,14 +127,26 @@ static void keyboard_event(lv_event_t *e)
             {
                 strncpy(ssid, text, sizeof(ssid) - 1);
                 ssid[sizeof(ssid) - 1] = '\0';
+                trim_trailing_whitespace(ssid);
             }
             else if (strcmp(ctx->active_key, "password") == 0)
             {
                 strncpy(password, text, sizeof(password) - 1);
                 password[sizeof(password) - 1] = '\0';
+                trim_trailing_whitespace(password);
             }
 
-            prefs_ptr->putString(ctx->active_key, text);
+            const char *value_to_store = text;
+            if (strcmp(ctx->active_key, "ssid") == 0)
+            {
+                value_to_store = ssid;
+            }
+            else if (strcmp(ctx->active_key, "password") == 0)
+            {
+                value_to_store = password;
+            }
+
+            prefs_ptr->putString(ctx->active_key, value_to_store);
             lv_label_set_text_fmt(ctx->status_label, "%s gespeichert", ctx->active_key);
         }
 
